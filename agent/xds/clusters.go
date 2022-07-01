@@ -1217,13 +1217,21 @@ func (s *ResourceGenerator) makeGatewayCluster(snap *proxycfg.ConfigSnapshot, op
 	if opts.connectTimeout <= 0 {
 		opts.connectTimeout = time.Duration(cfg.ConnectTimeoutMs) * time.Millisecond
 	}
-
+	// Increases default values for circuitBreakers
+	threshold := &envoy_cluster_v3.CircuitBreakers_Thresholds{
+		MaxConnections: makeUint32Value(100000), // default 1024
+	}
 	cluster := &envoy_cluster_v3.Cluster{
 		Name:           opts.name,
 		ConnectTimeout: durationpb.New(opts.connectTimeout),
 
 		// Having an empty config enables outlier detection with default config.
 		OutlierDetection: &envoy_cluster_v3.OutlierDetection{},
+		CircuitBreakers: &envoy_cluster_v3.CircuitBreakers{
+			Thresholds: []*envoy_cluster_v3.CircuitBreakers_Thresholds{
+				threshold,
+			},
+		},
 	}
 
 	useEDS := true
